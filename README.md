@@ -6,8 +6,9 @@ Group assignment on **probability distributions, Bayesian probability and gradie
 |---|---|---|---|
 | 1 | EM algorithm (from scratch) separating **fathers vs children** heights in Galton's data | `part1_em/em_gmm.py` | `outputs/part1_em_tracking_table.md`, `outputs/part1_em_fit.png` |
 | 2 | Bayes' theorem, **P(Positive \| keyword)** on IMDb 50K reviews, standard library only | `part2_bayes/bayes_keywords.py` | `outputs/part2_bayes_results.md` |
-| 3 | Gradient descent worked by hand in matrix form (3 updates) | `part3_manual/manual_gradient_descent.md` | |
+| 3 | Gradient descent worked by hand in matrix form (one update per member) | `part3_manual/CamScanner 29-10-2026 09.16.pdf` | |
 | 4 | Same gradient descent in NumPy, gradients verified with SciPy, Matplotlib plots | `part4_gd_code/gradient_descent.py` | `outputs/part4_*.png`, `outputs/part4_gd_log.txt` |
+| All | Presentation notebook: runs every part and shows the results, plots and handwritten pages | `formative3.ipynb` | |
 
 ## Setup
 
@@ -16,12 +17,13 @@ pip install -r requirements.txt
 python part1_em/em_gmm.py --height 70         # the coach's test height goes here (inches)
 python part1_em/em_gmm.py --height 178 --units cm
 python part2_bayes/bayes_keywords.py          # downloads IMDB-Dataset.csv into data/ on first run
-python part4_gd_code/gradient_descent.py      # --members 4 if the group has 4 people
+python part4_gd_code/gradient_descent.py      # 4 updates, one per member (--members N to change)
+jupyter notebook formative3.ipynb             # everything in one place for the presentation
 ```
 
 Data:
 - `data/GaltonFamilies.csv` (included): 934 children from 205 families, heights in inches.
-- `data/IMDB-Dataset.csv` (≈66 MB, not committed): 50,000 reviews, 25,000 positive and 25,000 negative. The script downloads it automatically from a public GitHub mirror of the Kaggle "IMDB Dataset of 50K Movie Reviews". Add `data/IMDB-Dataset.csv` to `.gitignore`; it is close to GitHub's size limit.
+- `data/IMDB-Dataset.csv` (≈66 MB, not committed): 50,000 reviews, 25,000 positive and 25,000 negative. The script downloads it automatically from a public GitHub mirror of the Kaggle "IMDB Dataset of 50K Movie Reviews". It is listed in `.gitignore` because it is close to GitHub's size limit. Run the script once before the presentation so the file is already there if the internet is slow.
 
 ---
 
@@ -74,6 +76,8 @@ Look at the sanity check the script prints: EM's "children" component (μ = 64.2
 
 Conditional probability chosen: **P(Positive | keyword)**. A review "contains" a keyword if the word appears at least once (HTML `<br />` tags removed, lower-cased, whole words only).
 
+**Why these keywords.** Positive: *excellent, wonderful, masterpiece, superb* are strong, unambiguous praise words that judge the whole film and are rarely used neutrally (unlike "good", which often appears as "not good"). Negative: *worst, waste, boring, awful* are strong, unambiguous criticism ("waste" as in "waste of time"). We mixed very strong words (masterpiece, worst) with everyday ones (boring) to test whether stronger words give stronger evidence.
+
 | Keyword | Group | Prior P(Pos) | Likelihood P(kw\|Pos) | Marginal P(kw) | **Posterior P(Pos\|kw)** |
 |---|---|---|---|---|---|
 | excellent | positive | 0.5000 | 0.1146 | 0.0710 | **0.8073** |
@@ -98,22 +102,33 @@ Per-keyword markdown blocks with the raw counts are in `outputs/part2_bayes_resu
 
 ## Part 3 and Part 4: Gradient descent
 
-The manual working is in `part3_manual/manual_gradient_descent.md`. Each update has a blank for the member who did it.
+**Model.** y = m₁x₁ + m₂x₂ + b has a single intercept b. In matrix form we write it as the vector **b** = b·**1** = [b, b], so every step is a matrix operation:
 
-The code prints the same steps (prediction → error → MSE → gradient → update) for each iteration. It checks every analytic gradient against `scipy.differentiate.derivative` (agreement within 1e-13). It also saves:
-- `outputs/part4_params_over_iterations.png`: m₁, m₂, b₁, b₂ over iterations
+ŷ = X**m** + **b**, e = ŷ − y, J = (1/n)·eᵀe
+
+Chain rule, with ∂J/∂e = (2/n)e:
+- ∂J/∂**m** = (∂e/∂**m**)ᵀ ∂J/∂e = (2/n)·Xᵀe
+- ∂J/∂b = (∂e/∂b)ᵀ ∂J/∂e = (2/n)·**1**ᵀe (the sum of the errors, because b is shared by both data points)
+
+Learning rate α = 0.01 (not given in the brief).
+
+**Manual working.** `part3_manual/CamScanner 29-10-2026 09.16.pdf`, one update per member. Update 1 is done: ŷ = [6, 17], e = [1, 11], J = 61, ∂J/∂m = [45, 113], ∂J/∂b = 12, giving m = [−1.45, 0.87] and b = [0.88, 0.88]. The remaining members' updates will be added to the same PDF.
+
+**Code.** `part4_gd_code/gradient_descent.py` prints the same steps for every update (prediction → error → MSE → gradient → update). It checks every analytic gradient against `scipy.differentiate.derivative` (agreement within 1e-13). It also saves:
+- `outputs/part4_params_over_iterations.png`: m₁, m₂ and b over iterations
 - `outputs/part4_error_over_iterations.png`: MSE over iterations (log scale)
 
 | After update | m | b | MSE |
 |---|---|---|---|
 | 0 | [−1, 2] | [1, 1] | 61.0000 |
-| 1 | [−1.45, 0.87] | [0.99, 0.89] | 6.5033 |
-| 2 | [−1.3331, 1.1765] | [1.0185, 0.9121] | 2.4974 |
-| 3 | [−1.369037, 1.095583] | [1.036351, 0.898653] | 2.1645 |
+| 1 | [−1.45, 0.87] | [0.88, 0.88] | 6.8450 |
+| 2 | [−1.3316, 1.1808] | [0.9318, 0.9318] | 2.7238 |
+| 3 | [−1.369562, 1.095182] | [0.93624, 0.93624] | 2.3904 |
+| 4 | [−1.364477, 1.118634] | [0.95362, 0.95362] | 2.3440 |
 
-Final predictions with m⁽³⁾, b⁽³⁾: ŷ = [2.9541, 6.3783] (true y = [5, 6]).
+Final predictions with m⁽⁴⁾, b⁽⁴⁾: ŷ = [2.9450, 6.6821] (true y = [5, 6]).
 
-Learning rate α = 0.01 (not given in the brief). Stability requires α < 2/λ_max ≈ 0.0157.
+**Trend.** The error falls after every update (61 → 6.85 → 2.72 → 2.39 → 2.34), so m and b are moving in a direction that reduces the error. The first step is large and overshoots: both predictions start too high, so m₂ (which multiplies the bigger x₂ values 3 and 10) drops sharply from 2 to 0.87, and both predictions end up too low. After that, m₂ zig-zags (1.18, 1.10, 1.12) while b climbs slowly (0.88 → 0.95). Zig-zagging like this is typical of a long, narrow valley in J. The steps shrink as the error drops.
 
 ---
 
@@ -121,6 +136,9 @@ Learning rate α = 0.01 (not given in the brief). Stability requires α < 2/λ_m
 
 Each member must add at least one proof of contribution (commits, or the updates signed in Part 3). Fill in:
 
-| Member | Part(s) | Proof |
-|---|---|---|
-| | | |
+| Member | Part 3 update | Part(s) presented | Proof (commits / signed update) |
+|---|---|---|---|
+| | Update 1 | | |
+| | Update 2 | | |
+| | Update 3 | | |
+| | Update 4 | | |
