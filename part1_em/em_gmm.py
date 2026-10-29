@@ -147,6 +147,21 @@ def classify(height, p):
     }
 
 
+def print_classification(height, p, units="in"):
+    """Classify a test height and print every step: likelihoods, prior x likelihood,
+    evidence and the exact posteriors P(Child | x) and P(Parent | x)."""
+    h = height / 2.54 if units == "cm" else height
+    r = classify(h, p)
+    print(f"\n=== Classifying test height {height} {units} ({h:.2f} in) ===")
+    print(f"Likelihood  N(x|Children) = {r['likelihood_child']:.6f}   N(x|Fathers) = {r['likelihood_parent']:.6f}")
+    print(f"Prior x Likelihood         = {r['joint_child']:.6f}             = {r['joint_parent']:.6f}")
+    print(f"Evidence p(x)              = {r['evidence']:.6f}")
+    print(f"P(Child  | x) = {r['p_child']:.6f}  ({r['p_child']*100:.2f}%)")
+    print(f"P(Parent | x) = {r['p_parent']:.6f}  ({r['p_parent']*100:.2f}%)")
+    print("Prediction:", "CHILD" if r["p_child"] > r["p_parent"] else "PARENT (Father)")
+    return r
+
+
 # ----------------------------------------------------------------------------------------------
 # 5. The "just split at the global mean" baseline (for the presentation question)
 # ----------------------------------------------------------------------------------------------
@@ -258,15 +273,7 @@ def main():
     print(f"\nSaved outputs/part1_em_tracking_table.md and outputs/part1_em_fit.png")
 
     if args.height is not None:
-        h = args.height / 2.54 if args.units == "cm" else args.height
-        r = classify(h, final)
-        print(f"\n=== Classifying test height {args.height} {args.units} ({h:.2f} in) ===")
-        print(f"Likelihood  N(x|Children) = {r['likelihood_child']:.6f}   N(x|Fathers) = {r['likelihood_parent']:.6f}")
-        print(f"Prior x Likelihood         = {r['joint_child']:.6f}             = {r['joint_parent']:.6f}")
-        print(f"Evidence p(x)              = {r['evidence']:.6f}")
-        print(f"P(Child  | x) = {r['p_child']:.6f}  ({r['p_child']*100:.2f}%)")
-        print(f"P(Parent | x) = {r['p_parent']:.6f}  ({r['p_parent']*100:.2f}%)")
-        print("Prediction:", "CHILD" if r["p_child"] > r["p_parent"] else "PARENT (Father)")
+        print_classification(args.height, final, args.units)
 
 
 if __name__ == "__main__":
